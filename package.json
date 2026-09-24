@@ -1,0 +1,23 @@
+{
+  "name": "ariyaan-ai-assistant",
+  "version": "1.0.0",
+  "description": "ARIYAAN – Personal AI Assistant (Final-Year College Project)",
+  "main": "backend/server.js",
+  "scripts": {
+    "setup": "npm install --prefix backend && npm install --prefix frontend",
+    "start": "node backend/server.js",
+    "dev:backend": "node --watch backend/server.js",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "dev": "npm run dev:backend"
+  },
+  "keywords": [
+    "ai-assistant",
+    "gemini-api",
+    "react",
+    "express",
+    "final-year-project"
+  ],
+  "author": "Duraimurugan",
+  "license": "MIT"
+}
