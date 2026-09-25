@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Paperclip, X, Zap, CornerDownLeft } from 'lucide-react';
+import { Send, Sparkles, X, Zap, Mic } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
+import { MicButton } from './MicButton';
+import { VOICE_STATE } from '../voice/useVoiceController';
 
 export function ChatInput() {
-  const { sendMessage, isLoading, aiStatus } = useChat();
+  const { sendMessage, isLoading, aiStatus, voice } = useChat();
+  const { voiceState, voiceError, voiceSettings, interimText, clearVoiceError } = voice || {};
   const [text, setText] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
   const textareaRef = useRef(null);
@@ -47,6 +50,20 @@ export function ChatInput() {
     textareaRef.current?.focus();
   };
 
+  const isVoiceActive = voiceState && voiceState !== VOICE_STATE.IDLE && voiceState !== VOICE_STATE.ERROR;
+
+  const getVoiceStatusLabel = () => {
+    switch (voiceState) {
+      case VOICE_STATE.LISTENING:
+        return interimText
+          ? `🔴 Listening: "${interimText}"`
+          : '🔴 Listening... (speak clearly into your microphone)';
+      case VOICE_STATE.PROCESSING: return '⏳ Processing speech...';
+      case VOICE_STATE.SPEAKING:   return '🔊 ARIYAAN is speaking... (click mic to stop)';
+      default: return null;
+    }
+  };
+
   return (
     <div className="input-container">
       {/* Active AI Status Overlay during generation */}
@@ -63,6 +80,25 @@ export function ChatInput() {
               <div></div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Voice Status Bar */}
+      {isVoiceActive && (
+        <div className="voice-status-bar">
+          <span className="voice-status-label">{getVoiceStatusLabel()}</span>
+        </div>
+      )}
+
+      {/* Voice Error Banner */}
+      {voiceState === VOICE_STATE.ERROR && voiceError && (
+        <div className="voice-error-bar">
+          <span>⚠️ {voiceError}</span>
+          <button
+            onClick={clearVoiceError}
+            style={{ marginLeft: '0.75rem', background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', lineHeight: 1 }}
+            title="Dismiss"
+          >×</button>
         </div>
       )}
 
@@ -98,7 +134,7 @@ export function ChatInput() {
         <textarea
           ref={textareaRef}
           className="chat-textarea"
-          placeholder="Ask ARIYAAN anything..."
+          placeholder="Ask ARIYAAN anything... or click 🎤 to speak"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -137,6 +173,9 @@ export function ChatInput() {
             <span className="input-hint mobile-only" style={{ display: 'none' }}>
               Shift + Enter for new line
             </span>
+
+            {/* Microphone Button – voice input */}
+            <MicButton />
 
             <button
               className="send-btn"

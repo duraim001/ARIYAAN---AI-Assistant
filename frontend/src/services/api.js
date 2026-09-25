@@ -77,3 +77,30 @@ export async function testGeminiApiKey(apiKey) {
     };
   }
 }
+
+/**
+ * Execute a local OS-level voice command via the backend.
+ * Only allow-listed intents (OPEN_CHROME, OPEN_CALCULATOR, etc.)
+ * are accepted by the server.
+ *
+ * @param {string} intent - Intent constant (e.g. 'OPEN_CHROME')
+ */
+export async function executeVoiceCommand(intent) {
+  try {
+    const res = await fetch(`${API_BASE}/voice/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error || { userMessage: 'Voice command failed.' } };
+    }
+    return data;
+  } catch (err) {
+    return {
+      success: false,
+      error: { code: 'NETWORK_ERROR', userMessage: 'Cannot reach backend for voice command.' }
+    };
+  }
+}

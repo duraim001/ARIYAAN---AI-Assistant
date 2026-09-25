@@ -29,6 +29,11 @@ $$\text{அறிவு} + \text{உடையான்} = \text{அறிவு�
 ## 🌟 Key Features
 
 * **Real Gemini AI Integration**: Powered by Google's latest Gemini 2.5 Flash / Pro models via the official `@google/genai` SDK.
+* **Integrated Voice Assistant**: Real-time voice interaction with Speech-to-Text (STT) and dynamic Text-to-Speech (TTS) using browser-native Web Speech APIs.
+* **System & App Launch Intents**: Voice commands to launch desktop applications such as Google Chrome, Windows Calculator, Notepad, and File Explorer.
+* **Voice Customization Panel**: Dedicated Voice tab in Settings to toggle voice input/output, pick available voices, and adjust speech rate.
+* **Interactive Message-Level Audio**: In-bubble audio playback button allowing users to listen or replay any AI response on demand.
+* **Personal Voice Dataset Recorder**: Built-in audio dataset collector (`?recorder`) with 30+ categorized commands for model fine-tuning and future multilingual support.
 * **Multi-turn Conversation Memory**: Retains conversation history context for intelligent follow-up questions.
 * **Secure API Key Proxy**: Protects secret credentials by handling all Gemini API calls server-side in Node.js/Express.
 * **Interactive Welcome Screen**: Displays initial suggestion cards for topics like code writing, problem-solving, math, and project architecture.
@@ -111,16 +116,51 @@ npm start
 
 ---
 
+## 🎙️ Voice Assistant & Dataset Collector
+
+ARIYAAN features native voice interaction built on the Web Speech API (SpeechRecognition and SpeechSynthesis), integrated with the existing Gemini AI processing pipeline.
+
+### Voice Features & Intent Engine
+* **Push-to-Talk Mic**: Click the microphone icon next to the chat bar to speak. The button indicates states: *Idle*, *Listening*, *Processing*, *Speaking*, and *Error*.
+* **System Control Commands**:
+  - *"Open Chrome"* / *"Launch Google Chrome"*
+  - *"Open Calculator"*
+  - *"Open Notepad"*
+  - *"Open File Explorer"*
+* **Instant Information & Conversational Intents**:
+  - *"Hello ARIYAAN"* / *"Good morning"* (Instant warm response)
+  - *"What is the time?"* / *"Tell me the current time"* (Real-time clock readout)
+  - *"What is today's date?"* / *"What day is it today?"*
+  - *"Who are you?"* / *"What can you do?"*
+* **Full Generative Fallback**: Any complex query (e.g. *"Explain quantum computing"*, *"Write an essay about renewable energy"*) is seamlessly routed to the Google Gemini LLM, and the response is read aloud using the voice synthesizer.
+* **Audio Controls**: Individual AI message bubbles feature a **Speak / Stop** button to replay or silence spoken responses.
+* **Settings Modal (Voice Tab)**: Control voice input enable/disable, voice output enable/disable, choose speech synthesizer voice, and adjust speech rate slider.
+
+### Standalone Personal Voice Dataset Recorder
+Access the built-in dataset recorder at `http://localhost:5173/?recorder` to capture your own speech samples:
+* 30+ categorized commands across **Greetings**, **Assistant Identity**, **Time & Date**, **System Commands**, **General Questions**, **Conversation Control**, and **Future Tamil**.
+* Automatically encodes audio into 16kHz mono PCM WAV files.
+* Saves progress across sessions in `localStorage`.
+* Downloaded samples can be organized into `training/dataset/<category>/`.
+
+---
+
 ## 🧪 Recommended Test Cases
 
-Verify the application using the following test prompts:
-
+### 1. General & AI Test Prompts
 1. **Basic Question**: `"What is artificial intelligence?"`
 2. **Follow-up Context**: `"Explain it with an example."` *(Verifies multi-turn memory)*
 3. **Programming**: `"Write a Python program to check whether a number is prime."` *(Verifies code formatting & copy button)*
 4. **Mathematics**: `"Solve 25 × 48 and explain the calculation step by step."`
 5. **General Knowledge**: `"What is the capital of Japan?"`
 6. **Error Handling**: Launch without an API key or enter an invalid key to test the friendly error alert and Settings modal.
+
+### 2. Voice Assistant Test Cases
+1. **Voice Greeting**: Click mic and say `"Hello ARIYAAN"` &rarr; verifies mic listening, greeting detection, and audio response.
+2. **Time & Date**: Say `"What is the time?"` or `"What is today's date?"` &rarr; verifies instant local intent response.
+3. **Desktop App Launch**: Say `"Open Calculator"` or `"Open Chrome"` &rarr; opens the desktop app via backend command runner.
+4. **AI Voice Query**: Say `"Explain quantum computing in simple terms"` &rarr; verifies speech-to-text input passing to Gemini model and voice readout.
+5. **Voice Settings**: Toggle *Voice Output* to OFF in Settings &rarr; verifies silent text response; toggle back ON to restore speech.
 
 ---
 

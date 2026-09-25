@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Plus, Settings, Info, Sun, Moon, Menu } from 'lucide-react';
+import { Sparkles, Plus, Settings, Info, Sun, Moon, Menu, Radio } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 
 export function Header() {
@@ -7,6 +7,7 @@ export function Header() {
     settings,
     updateSettings,
     createNewChat,
+    openLiveVoice,
     setIsSettingsOpen,
     setIsAboutOpen,
     isSidebarOpen,
@@ -64,6 +65,17 @@ export function Header() {
       </div>
 
       <div className="header-right">
+        <button
+          className="btn-live-voice"
+          onClick={openLiveVoice}
+          title="Open ARIYAAN Live Voice Assistant"
+          aria-label="Open ARIYAAN Live Voice"
+        >
+          <span className="btn-live-voice-pulse" />
+          <Radio size={16} />
+          <span>Live Voice</span>
+        </button>
+
         <button className="btn-primary-sm" onClick={createNewChat} title="Start a New Conversation">
           <Plus size={16} />
           <span>New Chat</span>

@@ -1,11 +1,18 @@
 import React from 'react';
-import { Sparkles, Code, BookOpen, Calculator, FileText, Lightbulb, Rocket, Info, Compass } from 'lucide-react';
+import { Sparkles, Code, BookOpen, Calculator, FileText, Lightbulb, Rocket, Info, Compass, Radio } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 
 export function WelcomeScreen() {
-  const { sendMessage } = useChat();
+  const { sendMessage, openLiveVoice } = useChat();
 
   const suggestions = [
+    {
+      category: 'Live Voice',
+      icon: <Radio size={18} />,
+      title: 'Talk Live with ARIYAAN',
+      desc: 'Hands-free, real-time voice conversation with the animated AI orb.',
+      isLive: true
+    },
     {
       category: 'Identity',
       icon: <Info size={18} />,
@@ -89,7 +96,13 @@ export function WelcomeScreen() {
             <div
               key={index}
               className="suggestion-card"
-              onClick={() => sendMessage(item.prompt)}
+              onClick={() => {
+                if (item.isLive) {
+                  openLiveVoice();
+                } else if (item.prompt) {
+                  sendMessage(item.prompt);
+                }
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div className="suggestion-icon">{item.icon}</div>

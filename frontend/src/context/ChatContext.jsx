@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { sendChatMessage, fetchHealthStatus } from '../services/api';
+import { useVoiceController } from '../voice/useVoiceController';
 
 const ChatContext = createContext();
 
@@ -36,6 +37,7 @@ export function ChatProvider({ children }) {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeView, setActiveView] = useState('chat'); // 'chat' | 'live'
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [aiStatus, setAiStatus] = useState('idle'); // 'idle' | 'thinking' | 'responding' | 'error'
@@ -44,6 +46,7 @@ export function ChatProvider({ children }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [healthStatus, setHealthStatus] = useState(null);
+  const liveTTSListenerRef = useRef(null);
 
   // Apply Theme attribute to document
   useEffect(() => {
@@ -131,7 +134,11 @@ export function ChatProvider({ children }) {
   };
 
   // Send a user message to ARIYAAN
-  const sendMessage = async (userText) => {
+  const voiceRef = useRef(null);
+
+  // Send a user message to ARIYAAN (from typed chat or voice)
+  const sendMessage = async (userText, fromVoice = false) => {
+    console.log('[ARIYAAN ChatContext] sendMessage called:', userText, 'fromVoice:', fromVoice);
     if (!userText || !userText.trim() || isLoading) return;
 
     setError(null);
@@ -140,6 +147,7 @@ export function ChatProvider({ children }) {
       id: 'msg-' + Date.now(),
       role: 'user',
       content: userText.trim(),
+      fromVoice,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -154,6 +162,7 @@ export function ChatProvider({ children }) {
     }));
 
     setAiStatus('responding');
+    console.log('[ARIYAAN ChatContext] Sending to backend /api/chat...');
     const response = await sendChatMessage({
       message: userText.trim(),
       history: historyForBackend,
@@ -165,22 +174,47 @@ export function ChatProvider({ children }) {
     setIsLoading(false);
 
     if (!response.success) {
+      console.warn('[ARIYAAN ChatContext] Error from backend:', response.error);
       setAiStatus('error');
       setError(response.error);
       return;
     }
 
+    console.log('[ARIYAAN ChatContext] Response received from Gemini:', response.text?.slice(0, 60));
     setAiStatus('idle');
     const assistantMessageObj = {
       id: 'msg-' + (Date.now() + 1),
       role: 'assistant',
       content: response.text,
       modelUsed: response.modelUsed || settings.model,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      _speakOnAdd: fromVoice
     };
 
     const updatedMessages = [...newMessages, assistantMessageObj];
     setMessages(updatedMessages);
+
+    // Speak reply immediately if triggered by voice and voice output is enabled
+    if (fromVoice && voiceRef.current?.voiceSettings?.voiceOutputEnabled) {
+      console.log('[ARIYAAN ChatContext] Speaking reply via TTS...');
+      voiceRef.current.speakResponse(response.text, {
+        onEnd: () => {
+          if (liveTTSListenerRef.current) {
+            liveTTSListenerRef.current();
+          }
+        },
+        onError: () => {
+          if (liveTTSListenerRef.current) {
+            liveTTSListenerRef.current();
+          }
+        }
+      });
+    } else if (fromVoice) {
+      // If voice output is not enabled or not supported, notify live listener immediately
+      if (liveTTSListenerRef.current) {
+        liveTTSListenerRef.current();
+      }
+    }
 
     // Update or create chat session in sidebar history
     let currentId = activeSessionId;
@@ -199,6 +233,8 @@ export function ChatProvider({ children }) {
         prev.map(s => s.id === currentId ? { ...s, messages: updatedMessages } : s)
       );
     }
+
+    return response;
   };
 
   // Regenerate last response
@@ -265,6 +301,36 @@ export function ChatProvider({ children }) {
     setError(null);
   };
 
+  // ─── Voice Controller ─────────────────────────────────────────────────────
+  const voice = useVoiceController({
+    sendMessage: (text) => sendMessage(text, true),
+    onVoiceError: (msg) => {
+      console.warn('[ARIYAAN Voice Error]', msg);
+    }
+  });
+  voiceRef.current = voice;
+
+  // ─── Live Voice Screen Controls ──────────────────────────────────────────
+  const openLiveVoice = useCallback(() => {
+    setActiveView('live');
+  }, []);
+
+  const closeLiveVoice = useCallback(() => {
+    if (voiceRef.current) {
+      voiceRef.current.stopVoice();
+    }
+    setActiveView('chat');
+  }, []);
+
+  const registerLiveTTSListener = useCallback((callback) => {
+    liveTTSListenerRef.current = callback;
+    return () => {
+      if (liveTTSListenerRef.current === callback) {
+        liveTTSListenerRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -275,6 +341,11 @@ export function ChatProvider({ children }) {
         searchQuery,
         setSearchQuery,
         activeSessionId,
+        activeView,
+        setActiveView,
+        openLiveVoice,
+        closeLiveVoice,
+        registerLiveTTSListener,
         messages,
         isLoading,
         aiStatus,
@@ -285,6 +356,7 @@ export function ChatProvider({ children }) {
         deleteChatSession,
         clearAllSessions,
         sendMessage,
+        sendMessageWithVoice: sendMessage,
         regenerateResponse,
         isSidebarOpen,
         setIsSidebarOpen,
@@ -293,7 +365,9 @@ export function ChatProvider({ children }) {
         isAboutOpen,
         setIsAboutOpen,
         healthStatus,
-        checkHealth
+        checkHealth,
+        // Voice
+        voice
       }}
     >
       {children}

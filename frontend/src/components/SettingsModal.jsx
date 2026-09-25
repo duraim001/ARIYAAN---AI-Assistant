@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Key, Eye, EyeOff, Check, RefreshCw, AlertCircle, Cpu, Sliders, Trash2, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Key, Eye, EyeOff, Check, RefreshCw, AlertCircle, Cpu, Sliders, Trash2, Download, Volume2, Mic } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { testGeminiApiKey } from '../services/api';
 
@@ -12,14 +12,18 @@ export function SettingsModal() {
     sessions,
     clearAllSessions,
     healthStatus,
-    checkHealth
+    checkHealth,
+    voice
   } = useChat();
 
-  const [activeTab, setActiveTab] = useState('api'); // 'api' | 'ai' | 'appearance' | 'data'
+  const [activeTab, setActiveTab] = useState('api'); // 'api' | 'ai' | 'appearance' | 'data' | 'voice'
   const [apiKeyInput, setApiKeyInput] = useState(settings.customApiKey || '');
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+
+  const { voiceSettings, updateVoiceSettings, availableVoices, sttSupported, ttsSupported } = voice || {};
+
 
   if (!isSettingsOpen) return null;
 
@@ -138,6 +142,23 @@ export function SettingsModal() {
             }}
           >
             Data
+          </button>
+
+          <button
+            onClick={() => setActiveTab('voice')}
+            style={{
+              flex: 1,
+              padding: '0.75rem',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'voice' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+              color: activeTab === 'voice' ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontWeight: activeTab === 'voice' ? '700' : '500',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            🎤 Voice
           </button>
         </div>
 
@@ -334,6 +355,130 @@ export function SettingsModal() {
                   <Trash2 size={16} />
                   <span>Clear All Conversations</span>
                 </button>
+              </div>
+            </div>
+          )}
+          {/* Voice Settings Tab */}
+          {activeTab === 'voice' && (
+            <div className="setting-group" style={{ gap: '1.25rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Volume2 size={18} color="var(--accent-primary)" />
+                English Voice Interaction
+              </div>
+              <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '0.5rem' }}>
+                Uses your browser's built-in speech recognition and synthesis. Works offline in Chrome and Edge.
+                {!sttSupported && <span style={{ color: 'var(--accent-rose)', display: 'block', marginTop: '0.5rem' }}>⚠️ Speech recognition not supported in this browser. Please use Chrome or Edge.</span>}
+              </p>
+
+              {/* Voice Input Toggle */}
+              <div className="setting-group" style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <label className="setting-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <Mic size={15} color="var(--accent-primary)" />
+                      Voice Input (Microphone)
+                    </label>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Speak your questions to ARIYAAN</span>
+                  </div>
+                  <button
+                    onClick={() => updateVoiceSettings?.({ voiceInputEnabled: !voiceSettings?.voiceInputEnabled })}
+                    style={{
+                      width: '48px', height: '26px', borderRadius: '13px',
+                      background: voiceSettings?.voiceInputEnabled ? 'var(--accent-primary)' : 'var(--bg-card)',
+                      border: '2px solid var(--border-color)', cursor: 'pointer',
+                      transition: 'background 0.2s', position: 'relative', flexShrink: 0
+                    }}
+                    title={voiceSettings?.voiceInputEnabled ? 'Disable voice input' : 'Enable voice input'}
+                  >
+                    <div style={{
+                      width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: '2px',
+                      left: voiceSettings?.voiceInputEnabled ? '24px' : '2px',
+                      transition: 'left 0.2s'
+                    }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Voice Output Toggle */}
+              <div className="setting-group" style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <label className="setting-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <Volume2 size={15} color="var(--accent-primary)" />
+                      Voice Output (Text-to-Speech)
+                    </label>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ARIYAAN speaks responses aloud</span>
+                  </div>
+                  <button
+                    onClick={() => updateVoiceSettings?.({ voiceOutputEnabled: !voiceSettings?.voiceOutputEnabled })}
+                    style={{
+                      width: '48px', height: '26px', borderRadius: '13px',
+                      background: voiceSettings?.voiceOutputEnabled ? 'var(--accent-primary)' : 'var(--bg-card)',
+                      border: '2px solid var(--border-color)', cursor: 'pointer',
+                      transition: 'background 0.2s', position: 'relative', flexShrink: 0
+                    }}
+                    title={voiceSettings?.voiceOutputEnabled ? 'Disable voice output' : 'Enable voice output'}
+                  >
+                    <div style={{
+                      width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: '2px',
+                      left: voiceSettings?.voiceOutputEnabled ? '24px' : '2px',
+                      transition: 'left 0.2s'
+                    }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TTS Voice Selector */}
+              {ttsSupported && availableVoices?.length > 0 && (
+                <div className="setting-group">
+                  <label className="setting-label">TTS Voice</label>
+                  <select
+                    className="setting-select"
+                    value={voiceSettings?.ttsVoiceURI || ''}
+                    onChange={(e) => updateVoiceSettings?.({ ttsVoiceURI: e.target.value })}
+                  >
+                    <option value="">System Default</option>
+                    {availableVoices.map(v => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {v.name} ({v.lang}){v.localService ? ' – Local' : ' – Online'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Speech Rate */}
+              <div className="setting-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="setting-label">Speech Rate</label>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: '700' }}>
+                    {voiceSettings?.ttsRate?.toFixed(1) ?? '1.0'}×
+                  </span>
+                </div>
+                <input
+                  type="range" min="0.5" max="2.0" step="0.1"
+                  value={voiceSettings?.ttsRate ?? 1.0}
+                  onChange={(e) => updateVoiceSettings?.({ ttsRate: parseFloat(e.target.value) })}
+                  style={{ accentColor: 'var(--accent-primary)', cursor: 'pointer', margin: '0.5rem 0' }}
+                />
+                <span style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
+                  Slow (0.5×) → Normal (1.0×) → Fast (2.0×)
+                </span>
+              </div>
+
+              {/* Language Info */}
+              <div className="setting-group" style={{ background: 'var(--bg-tertiary)', padding: '0.85rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <label className="setting-label">Language</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <span style={{ fontSize: '1.4rem' }}>🇬🇧</span>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>English (en-US)</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tamil support coming soon</div>
+                  </div>
+                  <span style={{ marginLeft: 'auto', background: 'var(--accent-primary)', color: '#fff', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '700' }}>Active</span>
+                </div>
               </div>
             </div>
           )}

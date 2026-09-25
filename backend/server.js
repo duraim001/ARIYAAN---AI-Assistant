@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRoutes from './routes/api.js';
+import voiceRoutes from './routes/voice.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api', apiRoutes);
+app.use('/api/voice', voiceRoutes);
 
 // Serve static frontend in production if built
 const distPath = path.resolve(__dirname, '../frontend/dist');

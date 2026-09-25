@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Sparkles } from 'lucide-react';
+import { Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { useChat } from '../context/ChatContext';
@@ -16,10 +16,11 @@ marked.setOptions({
 });
 
 export function MessageBubble({ message }) {
-  const { regenerateResponse, isLoading, settings } = useChat();
+  const { regenerateResponse, isLoading, settings, voice } = useChat();
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(null); // true | false | null
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const parsedMarkdown = useMemo(() => {
     if (isUser) return null;
@@ -34,6 +35,18 @@ export function MessageBubble({ message }) {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSpeak = () => {
+    if (!voice) return;
+    if (isSpeaking) {
+      voice.stopVoice();
+      setIsSpeaking(false);
+    } else {
+      setIsSpeaking(true);
+      voice.speakResponse(message.content);
+      // Reset flag when TTS finishes (detected via voice state becoming idle)
+    }
   };
 
   return (
@@ -116,6 +129,18 @@ export function MessageBubble({ message }) {
                 <RefreshCw size={13} className={isLoading ? 'spin-slow' : ''} />
                 <span>Retry</span>
               </button>
+
+              {/* Speak this response button */}
+              {voice?.ttsSupported && voice?.voiceSettings?.voiceOutputEnabled && (
+                <button
+                  className={`speak-response-btn ${isSpeaking ? 'active' : ''}`}
+                  onClick={handleSpeak}
+                  title={isSpeaking ? 'Stop speaking' : 'Speak this response'}
+                >
+                  {isSpeaking ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                  <span>{isSpeaking ? 'Stop' : 'Speak'}</span>
+                </button>
+              )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
                 <button

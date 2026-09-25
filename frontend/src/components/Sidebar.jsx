@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, X, Sparkles, Search, Settings, Info } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, X, Sparkles, Search, Settings, Info, Radio } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 
 export function Sidebar() {
@@ -11,6 +11,7 @@ export function Sidebar() {
     selectChatSession,
     deleteChatSession,
     createNewChat,
+    openLiveVoice,
     isSidebarOpen,
     setIsSidebarOpen,
     setIsSettingsOpen,
@@ -32,10 +33,25 @@ export function Sidebar() {
         </button>
       </div>
 
-      <div style={{ padding: '0.85rem' }}>
+      <div style={{ padding: '0.85rem 0.85rem 0.35rem 0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <button className="sidebar-new-chat" onClick={createNewChat}>
           <Plus size={18} />
           <span>New Conversation</span>
+        </button>
+
+        <button
+          className="sidebar-live-item"
+          onClick={() => {
+            openLiveVoice();
+            setIsSidebarOpen(false);
+          }}
+          title="Open ARIYAAN Live Voice Assistant"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Radio size={16} color="var(--accent-cyan)" />
+            <span>ARIYAAN Live</span>
+          </div>
+          <span className="sidebar-live-badge">Live</span>
         </button>
       </div>
 
